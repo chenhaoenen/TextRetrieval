@@ -1,0 +1,31 @@
+#!/bin/bash
+
+currentPath="$( cd "$( dirname "$0"  )" && pwd  )"
+cd ../../
+pwdPath="$(pwd)"
+
+pretrained_model_path=/code/pre_trained_model/model/bert-base-uncased
+query_path=$pwdPath/data/collections/msmarco-passage/queries.train.tsv
+passage_path=$pwdPath/data/collections/msmarco-passage/collection.tsv
+triple_ids_path=$pwdPath/data/triples/qidpidtriples.train.full.2.tsv
+output_path=$pwdPath/data/preprocess/qtextptexttriples.train.full.2.tsv
+
+LOG_FILE=$pwdPath/logs/$0.log
+rm -f "$LOG_FILE"
+
+run() {
+  python -u -m src.match.example.bert_cat_train \
+    --pretrained_model_path $pretrained_model_path \
+    --query_path $query_path \
+    --passage_path $passage_path \
+    --triple_ids_path $triple_ids_path | tee $LOG_FILE
+
+}
+
+s=`date +'%Y-%m-%d %H:%M:%S'`
+run
+e=`date +'%Y-%m-%d %H:%M:%S'`
+echo '==================================================='
+echo "the job start time：$s"
+echo "the job  end  time：$e"
+echo '==================================================='

@@ -1,0 +1,57 @@
+#!/bin/bash
+currentPath="$( cd "$( dirname "$0"  )" && pwd  )"
+cd ../../
+pwdPath="$(pwd)"
+
+
+# filter queries
+python $pwdPath/depend/anserini/tools/scripts/msmarco/filter_queries.py \
+ --qrels $pwdPath/data/collections/devset/qrels.dev.tsv \
+ --queries $pwdPath/data/collections/msmarco-passage/queries.dev.tsv \
+ --output $pwdPath/data/collections/devset/queries.dev.filter.tsv
+
+
+# bm25 recall
+sh $pwdPath/depend/anserini/target/appassembler/bin/SearchMsmarco \
+  -hits 1000 \
+  -threads 1 \
+  -k1 0.90\
+  -b 0.40 \
+  -index $pwdPath/data/indexes/msmarco-passage/lucene-index-msmarco \
+  -queries $pwdPath/data/collections/devset/queries.dev.filter.tsv \
+  -output $pwdPath/data/runs/run.msmarco-passage.dev.filter.tsv
+
+
+# eval
+python $pwdPath/depend/anserini/tools/scripts/msmarco/msmarco_passage_eval.py \
+  $pwdPath/data/collections/devset/qrels.dev.tsv \
+  $pwdPath/data/runs/run.msmarco-passage.dev.filter.tsv
+
+
+#####################
+#MRR @10: 0.1866132653836467
+#QueriesRanked: 55578
+#####################
+
+
+
+# bm25 recall
+sh $pwdPath/depend/anserini/target/appassembler/bin/SearchMsmarco \
+  -hits 1000 \
+  -threads 1 \
+  -index $pwdPath/data/indexes/msmarco-passage/lucene-index-msmarco \
+  -queries $pwdPath/data/collections/devset/queries.dev.filter.tsv \
+  -output $pwdPath/data/runs/run.msmarco-passage.dev.filter.tsv
+
+
+# eval
+python $pwdPath/depend/anserini/tools/scripts/msmarco/msmarco_passage_eval.py \
+  $pwdPath/data/collections/devset/qrels.dev.tsv \
+  $pwdPath/data/runs/run.msmarco-passage.dev.filter.tsv
+
+
+#####################
+#MRR @10: 0.19095650357256166
+#QueriesRanked: 55578
+#####################
+
