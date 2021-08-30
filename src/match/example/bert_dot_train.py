@@ -10,10 +10,10 @@ import torch
 import argparse
 import subprocess
 from torch import optim
-from ..model.bert_cat import BertCat
+from ..model.bert_dot import BertDot
 from src.utils.timer import stats_time
 from torch.utils.data import IterableDataset, DataLoader
-from transformers import AutoTokenizer, AutoConfig, set_seed, logging
+from transformers import AutoTokenizer, set_seed, logging
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -47,8 +47,7 @@ def setup_training(args):
 
 def prepare_model_and_optimizer(args, device):
     tokenizer = AutoTokenizer.from_pretrained(args.pretrained_model_path)
-    config = AutoConfig.from_pretrained(args.pretrained_model_path)
-    model = BertCat.from_pretrained(args.pretrained_model_path, config=config).to(device)
+    model = BertDot(args.pretrained_model_path).to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
     return model, optimizer, tokenizer
@@ -99,13 +98,11 @@ def triples_data_loader(args, tokenizer):
 
     def collate_fn(batch):
         querys, passages, labels = zip(*batch)
-        tokenize = tokenizer(querys, passages, max_length=args.max_seq_length, truncation=True, padding='max_length', return_tensors='pt')
-        input_ids = tokenize.input_ids
-        token_type_ids = tokenize.token_type_ids
-        attention_mask = tokenize.attention_mask
+        querys_tokenize = tokenizer(list(querys), max_length=30, truncation=True, padding='max_length', return_tensors='pt')
+        passages_tokenize = tokenizer(list(passages), max_length=200, truncation=True, padding='max_length', return_tensors='pt')
         labels = torch.tensor(labels)
 
-        return input_ids, token_type_ids, attention_mask, labels
+        return querys_tokenize, passages_tokenize, labels
 
     train_data_loader = DataLoader(dataset=TriplesDataset(args.triple_ids_with_label_path),
                                    batch_size=args.batch_size,
@@ -146,8 +143,8 @@ def trainer():
             model.train()
             step += 1
             batch = [w.to(device) for w in batch]
-            input_ids, token_type_ids, attention_mask, labels = batch
-            loss = model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask, labels=labels)
+            querys, passages, labels = batch
+            loss = model(querys=querys, passages=passages, labels=labels)
 
             loss.backward()
             if step % args.log_freq == 0:
@@ -177,7 +174,6 @@ def trainer():
 #         sentb_embeds = torch.cat(sentb_embeds, dim=0).numpy()
 #
 #         print(f'task_name:{args.task_name}, corrcoef:{eval_corrcoef(senta_embeds, sentb_embeds, labels)}')
-
 
 
 if __name__ == '__main__':

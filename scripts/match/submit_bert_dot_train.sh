@@ -14,7 +14,7 @@ LOG_FILE=$pwdPath/logs/$0.log
 rm -f "$LOG_FILE"
 
 run() {
-  python -u -m src.match.example.bert_cat_train \
+  python -u -m src.match.example.bert_dot_train \
     --pretrained_model_path $pretrained_model_path \
     --query_path $query_path \
     --passage_path $passage_path \

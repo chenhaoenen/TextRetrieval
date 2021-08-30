@@ -4,13 +4,15 @@
 # Date: 2021/8/29 12:32 
 # Description:  
 # --------------------------------------------
+import random
+import time
 import argparse
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--query_path', type=str)
-    parser.add_argument('--collection_path', type=str)
-    parser.add_argument('--triples_ids_path', type=str)
+    parser.add_argument('--passage_path', type=str)
+    parser.add_argument('--triple_ids_path', type=str)
     parser.add_argument('--output_path', type=str)
 
     args = parser.parse_args()
@@ -22,56 +24,62 @@ def main():
     args = parse_arguments()
 
     # query
-    querys = {}
+    querys = set()
     with open(args.query_path, 'r') as reader:
         line = reader.readline()
         while line:
             content = line.strip().split('\t')
             assert len(content) == 2
-            qid, qtext = content
-            querys[qid] = qtext
+            qid, _ = content
+            querys.add(qid)
             line = reader.readline()
-
-    print(f'query num - {len(querys)}')
+    print(f'load query num - {len(querys)}')
 
     # passage
-    passages = {}
-    with open(args.collection_path, 'r') as reader:
+    passages = set()
+    with open(args.passage_path, 'r') as reader:
         line = reader.readline()
         while line:
             content = line.strip().split('\t')
             assert len(content) == 2
-            pid, ptext = content
-            passages[pid] = ptext
+            pid, _ = content
+            passages.add(pid)
             line = reader.readline()
+    print(f'load passage num - {len(passages)}')
 
-    print(f'passage num - {len(passages)}')
-
-
+    # triples
     writer = open(args.output_path, 'w')
-    w_num = 0
-    with open(args.triples_ids_path, 'r') as reader:
+
+    triples = []
+    num = 0
+    with open(args.triple_ids_path, 'r') as reader:
         line = reader.readline()
         while line:
+            num += 1
             content = line.strip().split('\t')
             assert len(content) == 3
-            qid, p_pid, n_pid = content
-            if qid in querys and p_pid in passages and n_pid in passages:
-                example = querys[qid] + '\t' + passages[p_pid] + '\t' + passages[n_pid]
-                writer.write(example)
-                writer.write('\n')
-                w_num += 1
-            else:
-                if qid not in querys:
-                    print(f'qid - {qid} not in querys')
-                elif p_pid not in passages:
-                    print(f'p_pid - {p_pid} not in passages')
-                else:
-                    print(f'n_pid - {n_pid} not in passages')
+            pid, pos_pid, neg_pid = content
+            if pid in querys and pos_pid in passages:
+                triples.append((pid, pos_pid, 1))
+            if pid in querys and neg_pid in passages:
+                triples.append((pid, neg_pid, 0))
+            if num % 10000000 == 0:
+                print(f"num - {num}  time:{time.strftime('%Y/%m/%d %H:%M:%S', time.localtime())}")
+                random.shuffle(triples)
+                for q, p, l in triples:
+                    writer.write(q + '\t' + p + '\t' + str(l) + '\n')
+                writer.flush()
+                triples = []
             line = reader.readline()
+
+    random.shuffle(triples)
+    for q, p, l in triples:
+        writer.write(q + '\t' + p + '\t' + str(l) + '\n')
     writer.flush()
+    print(f'load triples num - {num}')
+
+
     writer.close()
-    print(f'output num - {w_num}')
 
 
 if __name__ == '__main__':

@@ -9,7 +9,6 @@ from torch import nn
 import torch.nn.functional as F
 from transformers.models.bert.modeling_bert import BertModel, BertPreTrainedModel
 
-
 class BertCat(BertPreTrainedModel):
     base_model_prefix = "bert"
 
