@@ -20,12 +20,15 @@ class BertDot(nn.Module):
         query_embed = self.query_bert(querys.input_ids, querys.token_type_ids, querys.attention_mask)
         passage_embed = self.passage_bert(passages.input_ids, passages.token_type_ids, passages.attention_mask)
 
+        query_embed_normal = F.normalize(query_embed, dim=1)
+        passage_embed_normal = F.normalize(passage_embed, dim=1)
+
         if labels is not None:
-            out = torch.cosine_similarity(query_embed, passage_embed, dim=1)
+            out = (query_embed_normal * passage_embed_normal).sum(dim=1, keepdims=False)
             loss = F.binary_cross_entropy_with_logits(out, labels)
             return loss
 
-        return query_embed, passage_embed
+        return query_embed_normal, passage_embed_normal
 
 class BaseModel(nn.Module):
     def __init__(self, pre_trained_path):

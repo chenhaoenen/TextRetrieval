@@ -8,7 +8,6 @@ pretrained_model_path=/code/pre_trained_model/model/bert-base-uncased
 query_path=$pwdPath/data/collections/msmarco-passage/queries.train.tsv
 passage_path=$pwdPath/data/collections/msmarco-passage/collection.tsv
 triple_ids_with_label_path=$pwdPath/data/preprocess/qidpidlabeltriples.train.full.2.tsv
-output_path=$pwdPath/data/preprocess/qtextptexttriples.train.full.2.tsv
 
 LOG_FILE=$pwdPath/logs/$0.log
 rm -f "$LOG_FILE"
