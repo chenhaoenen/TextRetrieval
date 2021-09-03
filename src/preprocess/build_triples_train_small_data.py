@@ -10,8 +10,6 @@ import argparse
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--query_path', type=str)
-    parser.add_argument('--passage_path', type=str)
     parser.add_argument('--triple_ids_path', type=str)
     parser.add_argument('--output_path', type=str)
 
@@ -22,30 +20,6 @@ def parse_arguments():
 def main():
 
     args = parse_arguments()
-
-    # query
-    querys = set()
-    with open(args.query_path, 'r') as reader:
-        line = reader.readline()
-        while line:
-            content = line.strip().split('\t')
-            assert len(content) == 2
-            qid, _ = content
-            querys.add(qid)
-            line = reader.readline()
-    print(f'load query num - {len(querys)}')
-
-    # passage
-    passages = set()
-    with open(args.passage_path, 'r') as reader:
-        line = reader.readline()
-        while line:
-            content = line.strip().split('\t')
-            assert len(content) == 2
-            pid, _ = content
-            passages.add(pid)
-            line = reader.readline()
-    print(f'load passage num - {len(passages)}')
 
     # triples
     writer = open(args.output_path, 'w')
@@ -58,11 +32,9 @@ def main():
             num += 1
             content = line.strip().split('\t')
             assert len(content) == 3
-            qid, pos_pid, neg_pid = content
-            if qid in querys and pos_pid in passages:
-                triples.append((qid, pos_pid, 1))
-            if qid in querys and neg_pid in passages:
-                triples.append((qid, neg_pid, 0))
+            query, pos_passage, neg_passage = content
+            triples.append((query, pos_passage, 1))
+            triples.append((query, neg_passage, 0))
             if num % 10000000 == 0:
                 print(f"num - {num}  time:{time.strftime('%Y/%m/%d %H:%M:%S', time.localtime())}")
                 random.shuffle(triples)
